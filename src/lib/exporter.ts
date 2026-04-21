@@ -551,13 +551,17 @@ async function exportPDF(doc: DocResponse, fileName: string) {
     p.text(`INTELLIDOC ANALYSIS REPORT • Page ${pageNumber}`, 105, pageHeight - 10, { align: 'center', charSpace: 0 });
   };
 
+  const addHeader = (p: jsPDF) => {
+    p.setFont(FONT_FAMILY, 'normal');
+    p.setFontSize(8);
+    p.setTextColor(200, 200, 200);
+    p.text("OFFICIAL SYSTEM ANALYSIS REPORT", margin, 15);
+  };
+
   let currentPage = 1;
 
   // Header Branding
-  pdf.setFont(FONT_FAMILY, 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(37, 99, 235);
-  pdf.text("OFFICIAL SYSTEM ANALYSIS REPORT", margin, 15);
+  addHeader(pdf);
   
   // Title
   pdf.setFont(FONT_FAMILY, 'bold');
@@ -567,7 +571,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
   const wrappedTitle: string[] = pdf.splitTextToSize(sanitizeText(doc.metadata.title).toUpperCase(), contentWidth);
   wrappedTitle.forEach(line => {
     if (y > 270) { 
-      pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+      pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
       pdf.setFont(FONT_FAMILY, 'bold'); pdf.setFontSize(22); pdf.setCharSpace(0); 
     }
     pdf.text(line, margin, y, { charSpace: 0 });
@@ -589,7 +593,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
   const summaryLines: string[] = pdf.splitTextToSize(sanitizeText(doc.metadata.summary), contentWidth);
   summaryLines.forEach(line => {
     if (y > 275) { 
-      pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+      pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
       pdf.setFont(FONT_FAMILY, 'italic'); pdf.setFontSize(11); pdf.setCharSpace(0); 
     }
     pdf.text(line, margin, y, { charSpace: 0 });
@@ -640,10 +644,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
         currentPage++;
         y = 30;
         addFooter(pdf, currentPage);
-        pdf.setFont(FONT_FAMILY, 'bold');
-        pdf.setFontSize(10);
-        pdf.setTextColor(37, 99, 235);
-        pdf.text("OFFICIAL SYSTEM ANALYSIS REPORT", margin, 15);
+        addHeader(pdf);
       }
       
       pdf.setFont(FONT_FAMILY, 'bold');
@@ -652,7 +653,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       
       headingLines.forEach(line => {
         if (y > 260) { 
-          pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+          pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
           pdf.setFont(FONT_FAMILY, 'bold'); pdf.setFontSize(15); 
         }
         pdf.text(line, margin, y);
@@ -665,7 +666,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       y += 8;
     } else if (el.type === 'paragraph') {
       if (y > 260) { 
-        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
+        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
       }
       pdf.setFont(FONT_FAMILY, 'normal');
       pdf.setFontSize(11);
@@ -679,7 +680,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
         const lines: string[] = pdf.splitTextToSize(segment, contentWidth);
         lines.forEach(line => {
           if (y > 260) { 
-            pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+            pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
             pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
           }
           pdf.text(line, margin, y);
@@ -689,7 +690,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       y += 4;
     } else if (el.type === 'list' && el.items) {
       if (y > 260) { 
-        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
+        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
       }
       pdf.setFont(FONT_FAMILY, 'normal');
       pdf.setFontSize(11);
@@ -697,7 +698,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
         const segments = sanitizeText(item).split('\n');
         segments.forEach((segment, segmentIndex) => {
           if (y > 260) { 
-            pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+            pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
             pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
           }
           
@@ -710,7 +711,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
           const wrappedItem: string[] = pdf.splitTextToSize(segment, contentWidth - 8);
           wrappedItem.forEach(line => {
             if (y > 260) { 
-              pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+              pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
               pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
             }
             pdf.text(line, margin + 6, y);
@@ -723,7 +724,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
     } else if (el.type === 'table' && el.headers && el.rows) {
       // Standardized boundary check for tables
       if (y > 230) {
-        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
+        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
       }
 
       const headerBg = [219, 234, 254];
@@ -773,7 +774,7 @@ async function exportPDF(doc: DocResponse, fileName: string) {
         // Title + padding check
         const totalNeededHeight = imgHeight + 16; 
         if (y + totalNeededHeight > 275) { 
-          pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+          pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
         }
         
         // Print title NOW because we know we have space
@@ -798,7 +799,10 @@ async function exportPDF(doc: DocResponse, fileName: string) {
         pdf.setFillColor(241, 245, 249);
         pdf.rect(margin, y, contentWidth, rectHeight, 'F');
         codeLines.forEach(line => {
-          if (y > 275) { pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); pdf.setFont('courier', 'normal'); pdf.setFontSize(9); }
+          if (y > 275) { 
+            pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); addHeader(pdf);
+            pdf.setFont('courier', 'normal'); pdf.setFontSize(9); 
+          }
           pdf.text(line, margin + 5, y + 5);
           y += 5;
         });
