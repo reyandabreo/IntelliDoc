@@ -1,0 +1,6 @@
+{
+  "name": "IntelliDoc Engine",
+  "description": "An intelligent document generation engine that transforms natural language and raw text into structured, rich formatted documents with tables, diagrams, and semantic styling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
