@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, 
@@ -178,16 +178,19 @@ export default function App() {
                 </div>
               </div>
               
-              <div className="p-1 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-inner flex relative">
-                {/* Momentum Background Pill */}
+              <div className="p-1 bg-[var(--bg)] border border-[var(--border)] rounded-xl shadow-inner flex relative overflow-hidden">
+                {/* Momentum Background Pill - Hardware Accelerated */}
                 <motion.div 
-                  className="absolute inset-y-1 bg-[var(--accent)] rounded-lg shadow-sm z-0"
+                  className="absolute inset-y-1 bg-[var(--accent)] rounded-lg shadow-sm z-0 will-change-transform"
                   initial={false}
                   animate={{ 
-                    left: inputMode === 'content' ? '4px' : '50%',
-                    right: inputMode === 'content' ? '50%' : '4px'
+                    x: inputMode === 'content' ? '0%' : '100%',
                   }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  style={{
+                    width: 'calc(50% - 4px)',
+                    left: '4px'
+                  }}
+                  transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
                 />
 
                 <button
@@ -213,22 +216,68 @@ export default function App() {
               </div>
             </div>
 
-            <div className="space-y-4 flex-1 flex flex-col min-h-[300px] md:min-h-0">
-              <label className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em] block">
-                {inputMode === 'prompt' ? 'Research Parameters' : 'Source Protocol Data'}
-              </label>
-              <div className="flex-1 flex flex-col relative group">
-                <div className="absolute top-3 left-3 p-1.5 bg-[var(--sidebar)] rounded border border-[var(--border)] z-10 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                  <Terminal className="w-3 h-3 text-[var(--accent)]" />
-                </div>
-                <textarea
-                  className="w-full h-full min-h-[250px] bg-[var(--bg)] border border-[var(--border)] rounded-xl p-5 pt-12 md:pt-5 text-sm leading-relaxed text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 focus:border-[var(--accent)] resize-none transition-all shadow-inner font-medium placeholder:text-[var(--text-muted)]/50"
-                  placeholder={inputMode === 'prompt' 
-                    ? "Identify investigator persona & technical trace objectives..." 
-                    : "Inject raw forensic data points for structural re-engineering..."}
-                  value={inputMode === 'prompt' ? promptInput : contentInput}
-                  onChange={(e) => inputMode === 'prompt' ? setPromptInput(e.target.value) : setContentInput(e.target.value)}
-                />
+            <div className="space-y-4 flex-1 flex flex-col min-h-[400px] md:min-h-0">
+              <div className="relative h-4 overflow-hidden shrink-0">
+                <AnimatePresence initial={false} mode="popLayout">
+                  <motion.div
+                    key={inputMode}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute inset-0 text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-[0.2em]"
+                  >
+                    {inputMode === 'prompt' ? 'Research Parameters' : 'Source Protocol Data'}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              
+              <div className="flex-1 grid grid-cols-1 grid-rows-1 mt-1 relative overflow-hidden rounded-xl border border-[var(--border)] shadow-inner bg-[var(--bg)]">
+                {/* Content Editor Stack */}
+                <motion.div
+                  initial={false}
+                  animate={{ 
+                    opacity: inputMode === 'content' ? 1 : 0,
+                    pointerEvents: inputMode === 'content' ? 'auto' : 'none',
+                    zIndex: inputMode === 'content' ? 10 : 0
+                  }}
+                  transition={{ duration: 0.2, ease: "linear" }}
+                  className="col-start-1 row-start-1 flex flex-col h-full w-full group relative will-change-opacity"
+                >
+                  <div className="absolute top-3 left-3 p-1.5 bg-[var(--sidebar)] rounded border border-[var(--border)] z-10 opacity-0 group-focus-within:opacity-100 transition-opacity">
+                    <Terminal className="w-3 h-3 text-[var(--accent)]" />
+                  </div>
+                  <textarea
+                    spellCheck="false"
+                    className="w-full h-full p-5 pt-12 md:pt-5 text-sm leading-relaxed text-[var(--text-main)] bg-transparent focus:outline-none resize-none font-medium placeholder:text-[var(--text-muted)]/40 custom-scrollbar overflow-y-auto"
+                    placeholder="Inject raw forensic data points for structural re-engineering..."
+                    value={contentInput}
+                    onChange={(e) => setContentInput(e.target.value)}
+                  />
+                </motion.div>
+
+                {/* Prompt Editor Stack */}
+                <motion.div
+                  initial={false}
+                  animate={{ 
+                    opacity: inputMode === 'prompt' ? 1 : 0,
+                    pointerEvents: inputMode === 'prompt' ? 'auto' : 'none',
+                    zIndex: inputMode === 'prompt' ? 10 : 0
+                  }}
+                  transition={{ duration: 0.2, ease: "linear" }}
+                  className="col-start-1 row-start-1 flex flex-col h-full w-full group relative will-change-opacity"
+                >
+                  <div className="absolute top-3 left-3 p-1.5 bg-[var(--sidebar)] rounded border border-[var(--border)] z-10 opacity-0 group-focus-within:opacity-100 transition-opacity">
+                    <Terminal className="w-3 h-3 text-[var(--accent)]" />
+                  </div>
+                  <textarea
+                    spellCheck="false"
+                    className="w-full h-full p-5 pt-12 md:pt-5 text-sm leading-relaxed text-[var(--text-main)] bg-transparent focus:outline-none resize-none font-medium placeholder:text-[var(--text-muted)]/40 custom-scrollbar overflow-y-auto"
+                    placeholder="Identify investigator persona & technical trace objectives..."
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                  />
+                </motion.div>
               </div>
             </div>
 
@@ -431,7 +480,7 @@ export default function App() {
   );
 }
 
-function DocumentPage({ response }: { response: DocResponse }) {
+const DocumentPage = memo(({ response }: { response: DocResponse }) => {
   const isSlideFormat = ['pptx', 'ppt', 'slides'].includes(response.target_format);
   const isExcelFormat = response.target_format === 'excel';
   const isRawFormat = response.target_format === 'txt';
@@ -484,9 +533,9 @@ function DocumentPage({ response }: { response: DocResponse }) {
       </div>
     </div>
   );
-}
+});
 
-function SlidePreview({ response }: { response: DocResponse }) {
+const SlidePreview = memo(({ response }: { response: DocResponse }) => {
   // Group elements into slides based on headings
   const slides: any[] = [];
   let currentSlide: any = null;
@@ -538,9 +587,9 @@ function SlidePreview({ response }: { response: DocResponse }) {
       </div>
     </div>
   );
-}
+});
 
-function SpreadsheetPreview({ response }: { response: DocResponse }) {
+const SpreadsheetPreview = memo(({ response }: { response: DocResponse }) => {
   return (
     <div className="bg-[var(--bg)] border border-[var(--border)] rounded-lg shadow-xl w-full mx-auto overflow-hidden animate-in fade-in transition-colors">
       <div className="bg-[var(--sidebar)] border-b border-[var(--border)] px-4 py-2 flex items-center gap-4">
@@ -570,9 +619,9 @@ function SpreadsheetPreview({ response }: { response: DocResponse }) {
       </div>
     </div>
   );
-}
+});
 
-function RawPreview({ response }: { response: DocResponse }) {
+const RawPreview = memo(({ response }: { response: DocResponse }) => {
   return (
     <div className="bg-[#0F172A] p-6 md:p-10 rounded-2xl shadow-3xl w-full max-w-4xl mx-auto border border-white/5 font-mono text-sm leading-relaxed text-blue-100/90 overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
@@ -611,9 +660,9 @@ function RawPreview({ response }: { response: DocResponse }) {
       </div>
     </div>
   );
-}
+});
 
-function DocElementView({ element, isSlideView }: { element: DocElement, isSlideView?: boolean }) {
+const DocElementView = memo(({ element, isSlideView }: { element: DocElement, isSlideView?: boolean }) => {
   const styles = element.style || {};
   
   const containerStyles = {
@@ -630,6 +679,7 @@ function DocElementView({ element, isSlideView }: { element: DocElement, isSlide
           style={containerStyles}
           className={cn(
             "text-lg md:text-xl font-medium text-[var(--text-main)] mb-3 md:mb-4 border-b-2 border-[var(--border)] pb-2 flex items-center gap-3 transition-colors",
+            "break-after-avoid page-break-after-avoid",
             isSlideView && "text-base md:text-2xl mt-2",
             styles.highlight_bg && "p-3 rounded-lg"
           )}
@@ -674,6 +724,7 @@ function DocElementView({ element, isSlideView }: { element: DocElement, isSlide
       return (
         <div className={cn(
           "my-4 md:my-8 overflow-x-auto rounded-lg md:rounded-xl border border-[var(--border)] shadow-sm scrollbar-hide transition-colors",
+          "break-inside-avoid page-break-inside-avoid",
           isSlideView && "my-2 md:my-4"
         )}>
           <table className="w-full text-[10px] md:text-sm border-collapse min-w-[320px] md:min-w-[600px]">
@@ -710,7 +761,7 @@ function DocElementView({ element, isSlideView }: { element: DocElement, isSlide
     case 'diagram':
       return (
         <div className={cn(
-          "my-6 md:my-10",
+          "my-6 md:my-10 break-inside-avoid page-break-inside-avoid",
           isSlideView && "my-2 md:my-6"
         )}>
           <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
@@ -739,4 +790,4 @@ function DocElementView({ element, isSlideView }: { element: DocElement, isSlide
     default:
       return null;
   }
-}
+});

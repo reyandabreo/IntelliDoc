@@ -602,42 +602,60 @@ async function exportPDF(doc: DocResponse, fileName: string) {
   // Group elements so headings are anchored to their next content block
   for (let i = 0; i < doc.content.elements.length; i++) {
     const el = doc.content.elements[i];
-    const nextEl = doc.content.elements[i + 1];
 
     if (el.type === 'heading') {
-      // Estimate heading height (lines + line line)
       const headingText = sanitizeText(el.text || '').toUpperCase();
       const headingLines = pdf.splitTextToSize(headingText, contentWidth);
-      const headingHeight = (headingLines.length * 8) + 15; // padding + line + spacing
+      const headingHeight = (headingLines.length * 8) + 15; 
 
-      // Lookahead: Estimate next element's height
-      let nextHeight = 0;
-      if (nextEl) {
-        if (nextEl.type === 'paragraph') {
-          const pLines = pdf.splitTextToSize(sanitizeText(nextEl.text || ''), contentWidth);
-          nextHeight = pLines.length * 7;
-        } else if (nextEl.type === 'list' && nextEl.items) {
-          nextHeight = nextEl.items.length * 8; // simplified
-        } else if (nextEl.type === 'table' && nextEl.rows) {
-          nextHeight = (nextEl.rows.length + 1) * 10; // estimate
-        } else if (nextEl.type === 'diagram') {
-          nextHeight = 100; // conservative estimate for diagram
+      // Deep Recursive Section Lookahead: 
+      // Instead of just bonding to the NEXT element, we look ahead at the ENTIRE section
+      // until we hit another heading or the end of the document.
+      let fullSectionHeight = 0;
+      for (let j = i + 1; j < doc.content.elements.length; j++) {
+        const subEl = doc.content.elements[j];
+        if (subEl.type === 'heading') break;
+
+        let elHeight = 0;
+        if (subEl.type === 'paragraph') {
+          const pLines = pdf.splitTextToSize(sanitizeText(subEl.text || ''), contentWidth);
+          elHeight = pLines.length * 7;
+        } else if (subEl.type === 'list' && subEl.items) {
+          elHeight = subEl.items.length * 8;
+        } else if (subEl.type === 'table' && subEl.rows) {
+          elHeight = (subEl.rows.length + 1) * 11; // Standardized table row height estimate
+        } else if (subEl.type === 'diagram') {
+          elHeight = 180; // Estimated peak height for diagrams
         }
+        fullSectionHeight += elHeight + 5; // adding item spacing
       }
 
-      // If heading + at least some of next content doesn't fit, jump page
-      if (y + headingHeight + Math.min(nextHeight, 40) > 275) {
-        pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
+      // INTEGRITY BONDING:
+      // If the heading is low, OR if the combined section can fit on a new page but doesn't fit here, jump.
+      // We limit the "Bonding" to max 120 units to avoid moving massive multi-page sections unnecessarily.
+      const bondHeight = Math.min(fullSectionHeight, 120);
+
+      if (y > 230 || (y + headingHeight + bondHeight > 260)) {
+        pdf.addPage();
+        currentPage++;
+        y = 30;
+        addFooter(pdf, currentPage);
+        pdf.setFont(FONT_FAMILY, 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(37, 99, 235);
+        pdf.text("OFFICIAL SYSTEM ANALYSIS REPORT", margin, 15);
       }
       
       pdf.setFont(FONT_FAMILY, 'bold');
       pdf.setFontSize(15);
-      pdf.setCharSpace(0);
       pdf.setTextColor(0, 0, 0);
       
       headingLines.forEach(line => {
-        if (y > 270) { pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); pdf.setFont(FONT_FAMILY, 'bold'); pdf.setFontSize(15); }
-        pdf.text(line, margin, y, { charSpace: 0 });
+        if (y > 260) { 
+          pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
+          pdf.setFont(FONT_FAMILY, 'bold'); pdf.setFontSize(15); 
+        }
+        pdf.text(line, margin, y);
         y += 8;
       });
       y += 2;
@@ -646,12 +664,11 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       pdf.line(margin, y, 190, y);
       y += 8;
     } else if (el.type === 'paragraph') {
-      if (y > 270) { 
+      if (y > 260) { 
         pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
       }
       pdf.setFont(FONT_FAMILY, 'normal');
       pdf.setFontSize(11);
-      pdf.setCharSpace(0);
       const color = el.style?.text_color ? hexToRgb(el.style.text_color) : [30, 30, 30];
       pdf.setTextColor(color[0], color[1], color[2]);
       
@@ -661,43 +678,42 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       segments.forEach(segment => {
         const lines: string[] = pdf.splitTextToSize(segment, contentWidth);
         lines.forEach(line => {
-          if (y > 275) { 
+          if (y > 260) { 
             pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
-            pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11); pdf.setCharSpace(0); 
+            pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
           }
-          pdf.text(line, margin, y, { charSpace: 0 });
+          pdf.text(line, margin, y);
           y += 6.8;
         });
       });
       y += 4;
     } else if (el.type === 'list' && el.items) {
-      if (y > 270) { 
+      if (y > 260) { 
         pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
       }
       pdf.setFont(FONT_FAMILY, 'normal');
       pdf.setFontSize(11);
-      pdf.setCharSpace(0);
       el.items.forEach(item => {
         const segments = sanitizeText(item).split('\n');
         segments.forEach((segment, segmentIndex) => {
-          if (y > 270) { 
+          if (y > 260) { 
             pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
-            pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11); pdf.setCharSpace(0); 
+            pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
           }
           
           if (segmentIndex === 0) {
             pdf.setTextColor(37, 99, 235);
-            pdf.text('-', margin, y + 0.5, { charSpace: 0 }); 
+            pdf.text('-', margin, y + 0.5); 
           }
           
           pdf.setTextColor(30, 30, 30);
           const wrappedItem: string[] = pdf.splitTextToSize(segment, contentWidth - 8);
           wrappedItem.forEach(line => {
-            if (y > 275) { 
+            if (y > 260) { 
               pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage); 
-              pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11); pdf.setCharSpace(0); 
+              pdf.setFont(FONT_FAMILY, 'normal'); pdf.setFontSize(11);
             }
-            pdf.text(line, margin + 6, y, { charSpace: 0 });
+            pdf.text(line, margin + 6, y);
             y += 6.8;
           });
         });
@@ -705,8 +721,8 @@ async function exportPDF(doc: DocResponse, fileName: string) {
       });
       y += 4;
     } else if (el.type === 'table' && el.headers && el.rows) {
-      // Orphan protection for tables: If starting very low, jump page
-      if (y > 240) {
+      // Standardized boundary check for tables
+      if (y > 230) {
         pdf.addPage(); currentPage++; y = 30; addFooter(pdf, currentPage);
       }
 
