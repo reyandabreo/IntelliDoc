@@ -90,7 +90,7 @@ Hit **DOWNLOAD [FORMAT]** to generate and save your high-fidelity file. Success 
 <p align="center">
   <i>The platform features a distraction-free, forensic-grade workspace.</i>
   <br><br>
-  <img src="https://picsum.photos/seed/intellidoc/1200/600" alt="UI Preview Placeholder" width="100%" />
+  <img width="1705" height="938" alt="image" src="https://github.com/user-attachments/assets/a8c6704c-bd50-47bb-b4b2-a5fccb89fa5e" />
 </p>
 
 ---
